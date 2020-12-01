@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/KarrenAeris/crud/pkg/app"
+	"github.com/KarrenAeris/crud/cmd/app"
 	"github.com/KarrenAeris/crud/pkg/customers"
 	_ "github.com/jackc/pgx/v4"
 )
