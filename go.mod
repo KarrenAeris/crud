@@ -1,4 +1,4 @@
-module github.com/github.com/KarrenAeris/crud
+module github.com/KarrenAeris/crud
 
 go 1.15
 
