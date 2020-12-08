@@ -7,33 +7,42 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
+
 	"github.com/KarrenAeris/crud/pkg/customers"
+)
+
+// Методы запросов
+const (
+	GET    = "GET"    // Метод получения GET
+	POST   = "POST"   // Метод отправ/обновлении POST
+	DELETE = "DELETE" // Метод удаления DELETE
 )
 
 //Server ...
 type Server struct {
-	mux         *http.ServeMux
+	mux         *mux.Router
 	customerSvc *customers.Service
 }
 
 //NewServer ...
-func NewServer(m *http.ServeMux, cSvc *customers.Service) *Server {
-	return &Server{mux: m, customerSvc: cSvc}
+func NewServer(m *mux.Router, customerSvc *customers.Service) *Server {
+	return &Server{mux: m, customerSvc: customerSvc}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
-//Init ...
+//Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
-	s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
-	s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
-	s.mux.HandleFunc("/customers.getAllActive", s.handleGetAllActiveCustomers)
-	s.mux.HandleFunc("/customers.blockById", s.handleBlockByID)
-	s.mux.HandleFunc("/customers.unblockById", s.handleUnBlockByID)
-	s.mux.HandleFunc("/customers.removeById", s.handleDelete)
-	s.mux.HandleFunc("/customers.save", s.handleSave)
+	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
+	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleGetCustomerByID).Methods(GET)
+	s.mux.HandleFunc("/customers", s.handleSave).Methods(POST)
+	s.mux.HandleFunc("/customers/active", s.handleGetAllActiveCustomers).Methods(GET)
+	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleBlockByID).Methods(POST)
+	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleUnBlockByID).Methods(DELETE)
+	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleDelete).Methods(DELETE)
 }
 
 // хендлер метод для извлечения всех клиентов
@@ -64,10 +73,15 @@ func (s *Server) handleGetAllActiveCustomers(w http.ResponseWriter, r *http.Requ
 
 func (s *Server) handleGetCustomerByID(w http.ResponseWriter, r *http.Request) {
 	//получаем ID из параметра запроса
-	idP := r.URL.Query().Get("id")
+	// idP := r.URL.Query().Get("id")
+	idParam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	// переобразуем его в число
-	id, err := strconv.ParseInt(idP, 10, 64)
+	id, err := strconv.ParseInt(idParam, 10, 64)
 	//если получили ошибку, то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
@@ -96,11 +110,15 @@ func (s *Server) handleGetCustomerByID(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleBlockByID(w http.ResponseWriter, r *http.Request) {
 	//получаем ID из параметра запроса
-	idP := r.URL.Query().Get("id")
-
+	// idP := r.URL.Query().Get("id")
+	idParam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 	// переобразуем его в число
-	id, err := strconv.ParseInt(idP, 10, 64)
-	//если получили ошибку, то отвечаем с ошибкой
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
@@ -128,10 +146,14 @@ func (s *Server) handleBlockByID(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleUnBlockByID(w http.ResponseWriter, r *http.Request) {
 	//получаем ID из параметра запроса
-	idP := r.URL.Query().Get("id")
+	idParam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	// переобразуем его в число
-	id, err := strconv.ParseInt(idP, 10, 64)
+	id, err := strconv.ParseInt(idParam, 10, 64)
 	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
@@ -160,10 +182,15 @@ func (s *Server) handleUnBlockByID(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	//получаем ID из параметра запроса
-	idP := r.URL.Query().Get("id")
+	// idP := r.URL.Query().Get("id")
+	idParam, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	// переобразуем его в число
-	id, err := strconv.ParseInt(idP, 10, 64)
+	id, err := strconv.ParseInt(idParam, 10, 64)
 	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
@@ -191,25 +218,29 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
-	ip := r.FormValue("id")
-	name := r.FormValue("name")
-	phone := r.FormValue("phone")
+	/*
+		ip := r.FormValue("id")
+		name := r.FormValue("name")
+		phone := r.FormValue("phone")
 
-	id, err := strconv.Atoi(ip)
+		id, err := strconv.Atoi(ip)
+		if err != nil {
+			errorWriter(w, http.StatusBadRequest, err)
+			return
+		}
+		//проверка на пустату
+		if name == "" && phone == "" {
+			errorWriter(w, http.StatusBadRequest, err)
+			return
+		}
+	*/
+
+	var item *customers.Customer
+	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		errorWriter(w, http.StatusBadRequest, err)
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
-	}
-	//проверка на пустату
-	if name == "" && phone == "" {
-		errorWriter(w, http.StatusBadRequest, err)
-		return
-	}
-
-	item := &customers.Customer{
-		ID:    int64(id),
-		Name:  name,
-		Phone: phone,
 	}
 
 	customer, err := s.customerSvc.Save(r.Context(), item)

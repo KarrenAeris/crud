@@ -10,6 +10,7 @@ import (
 	"github.com/KarrenAeris/crud/cmd/app"
 	"github.com/KarrenAeris/crud/pkg/customers"
 	_ "github.com/jackc/pgx/v4"
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/dig"
 )
@@ -33,7 +34,7 @@ func execute(host, port, dsn string) (err error) {
 	// получение указателя на структуру для работы с БД
 	deps := []interface{}{
 		app.NewServer,
-		http.NewServeMux,
+		mux.NewRouter, // mux -> "github.com/gorilla/mux"
 		func() (*pgxpool.Pool, error) {
 			ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 			return pgxpool.Connect(ctx, dsn)
