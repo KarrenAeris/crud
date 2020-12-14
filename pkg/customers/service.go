@@ -202,3 +202,15 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 	return item, nil
 }
 
+// Auth - sign in
+func (s *Service) Auth(login, password string) bool {
+	sqlStatement := `select login, password from managers where login=$1 and password=$2`
+
+	err := s.pool.QueryRow(context.Background(), sqlStatement, login, password).Scan(&login, &password)
+	if err != nil {
+		log.Print(err)
+		return false
+	}
+
+	return true
+}

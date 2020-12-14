@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/KarrenAeris/crud/pkg/customers"
+	"github.com/KarrenAeris/crud/cmd/app/middleware"
 )
 
 // Методы запросов
@@ -36,13 +37,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 //Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
+	// s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
 	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
+	// s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleGetCustomerByID).Methods(GET)
+	// s.mux.HandleFunc("/customers.save", s.handleSave)
 	s.mux.HandleFunc("/customers", s.handleSave).Methods(POST)
 	s.mux.HandleFunc("/customers/active", s.handleGetAllActiveCustomers).Methods(GET)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleBlockByID).Methods(POST)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}/block", s.handleUnBlockByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/{id:[0-9]+}", s.handleDelete).Methods(DELETE)
+
+	s.mux.Use(middleware.Base(s.customerSvc.Auth))
 }
 
 // хендлер метод для извлечения всех клиентов
@@ -82,7 +88,7 @@ func (s *Server) handleGetCustomerByID(w http.ResponseWriter, r *http.Request) {
 
 	// переобразуем его в число
 	id, err := strconv.ParseInt(idParam, 10, 64)
-	//если получили ошибку, то отвечаем с ошибкой
+	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
@@ -98,7 +104,7 @@ func (s *Server) handleGetCustomerByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//если получили ошибку, то отвечаем с ошибкой
+	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
@@ -134,7 +140,7 @@ func (s *Server) handleBlockByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//если получили ошибку, то отвечаем с ошибкой
+	//если получили ошибку то отвечаем с ошибкой
 	if err != nil {
 		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusInternalServerError, err)
