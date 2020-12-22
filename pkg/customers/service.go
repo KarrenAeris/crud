@@ -2,15 +2,12 @@ package customers
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"log"
 	"time"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
 
 //ErrNotFound возвращается, когда покупатель не найден.
@@ -46,6 +43,14 @@ type Customer struct {
 	Password string    `json:"password"`
 	Active  bool      `json:"active"`
 	Created time.Time `json:"created"`
+}
+
+//Product представляет информацию о покупке.
+type Product struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Price int    `json:"price"`
+	Qty   int    `json:"qty"`
 }
 
 //All ....
@@ -217,71 +222,51 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 	return item, nil
 }
 
-// Auth - sign in
-func (s *Service) Auth(login string, password string) bool {
-	query := `SELECT login, password FROM managers WHERE login = $1 AND password = $2`
-
-	err := s.pool.QueryRow(context.Background(), query, login, password).Scan(&login, &password)
-	if err != nil {
-		log.Print(err)
-		return false
-	}
+//Products ...
+func (s *Service) Products(ctx context.Context) ([]*Product, error) {
 
 	return true
 }
+	items := make([]*Product, 0)
 
-//TokenForCustomer ....
-func (s *Service) TokenForCustomer(ctx context.Context, phone string, password string) (token string, err error) {
-	var hash string
-	var id int64
+	sqlStatement := `SELECT id, name, price, qty FROM products WHERE active = true ORDER by id LIMIT 500`
+	rows, err := s.pool.Query(ctx, sqlStatement)
 
-	err = s.pool.QueryRow(ctx, `SELECT id, password FROM customers WHERE phone = $1`, phone).Scan(&id, &hash)
-	if err == pgx.ErrNoRows {
-		return "", ErrNoSuchUser
-	}
 	if err != nil {
-		return "", ErrInternal
+		if err == pgx.ErrNoRows {
+			return items, nil
+		}
+		return nil, ErrInternal
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	if err != nil {
-		return "", ErrInvalidPassword
+	defer rows.Close()
+
+	for rows.Next() {
+		item := &Product{}
+		err = rows.Scan(&item.ID, &item.Name, &item.Price, &item.Qty)
+		if err != nil {
+			log.Print(err)
+			return nil, err
+		}
+		items = append(items, item)
 	}
 
-	buffer := make([]byte, 256)
-
-	n, err := rand.Read(buffer)
-
-	if n != len(buffer) || err != nil {
-		return "", ErrInternal
-	}
-
-	token = hex.EncodeToString(buffer)
-	_, err = s.pool.Exec(ctx, `INSERT INTO customers_tokens(token,customer_id) VALUES($1, $2)`, token, id)
-	if err != nil {
-		return "", ErrInternal
-	}
-
-	return token, nil
+	return items, nil
 }
 
-//AuthenticateCustomer ...
-func (s *Service) AuthenticateCustomer(ctx context.Context, token string) (id int64, err error) {
-	var expire time.Time
+//IDByToken ....
+func (s *Service) IDByToken(ctx context.Context, token string) (int64, error) {
+	var id int64
+	sqlStatement := `SELECT customer_id FROM customers_tokens WHERE token = $1`
+	err := s.pool.QueryRow(ctx, sqlStatement, token).Scan(&id)
 
-	err = s.pool.QueryRow(ctx, `SELECT customer_id, expire FROM customers_tokens WHERE token = $1`, token).Scan(&id, &expire)
-	if err == pgx.ErrNoRows {
-		return 0, ErrNoSuchUser
-	}
+	
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, nil
+		}
+
 		return 0, ErrInternal
-	}
-
-	tNow := time.Now().Unix()
-	tEnd := expire.Unix()
-
-	if tNow > tEnd {
-		return 0, ErrExpireToken
 	}
 
 	return id, nil
