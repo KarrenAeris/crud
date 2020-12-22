@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/KarrenAeris/crud/cmd/app/middleware"
-	"github.com/KarrenAeris/crud/pkg/managers"
 	"github.com/KarrenAeris/crud/pkg/types"
 	"github.com/gorilla/mux"
 )
@@ -88,7 +87,6 @@ func (s *Server) handleManagerGetToken(w http.ResponseWriter, r *http.Request) {
 
 	tkn, err := s.managerSvc.Token(r.Context(), manager.Phone, manager.Password)
 	if err != nil {
-		//вызываем фукцию для ответа с ошибкой
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}

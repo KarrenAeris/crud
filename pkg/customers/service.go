@@ -13,20 +13,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//ErrNotFound возвращается, когда покупатель не найден.
-var ErrNotFound = errors.New("item not found")
+var (
+	//ErrNotFound возвращается, когда покупатель не найден.
+	ErrNotFound = errors.New("item not found")
 
-//ErrInternal возвращается, когда произошла внутернняя ошибка.
-var ErrInternal = errors.New("internal error")
+	//ErrInternal возвращается, когда произошла внутернняя ошибка.
+	ErrInternal = errors.New("internal error")
 
-//ErrNoSuchUser возвращается, когда пользователь не найден
-var ErrNoSuchUser = errors.New("no such user")
+	//ErrNoSuchUser возвращается, когда пользователь не найден
+	ErrNoSuchUser = errors.New("no such user")
 
-//ErrInvalidPassword возвращается, когда пароль не верен
-var ErrInvalidPassword = errors.New("invalid password")
+	//ErrInvalidPassword возвращается, когда пороль не верен
+	ErrInvalidPassword = errors.New("invalid password")
 
-//ErrExpireToken возвращается, когда время ожидания токена истекает
-var ErrExpireToken = errors.New("token expired")
+	//ErrExpireToken возвращается, когда время ожидания токена истекает
+	ErrExpireToken = errors.New("token expired")
+)
 
 //Service описывает сервис работы с покупателям.
 type Service struct {
@@ -40,12 +42,12 @@ func NewService(pool *pgxpool.Pool) *Service {
 
 //Customer представляет информацию о покупателе.
 type Customer struct {
-	ID      int64     `json:"id"`
-	Name    string    `json:"name"`
-	Phone   string    `json:"phone"`
+	ID       int64     `json:"id"`
+	Name     string    `json:"name"`
+	Phone    string    `json:"phone"`
 	Password string    `json:"password"`
-	Active  bool      `json:"active"`
-	Created time.Time `json:"created"`
+	Active   bool      `json:"active"`
+	Created  time.Time `json:"created"`
 }
 
 //Product представляет информацию о покупке.
@@ -263,8 +265,6 @@ func (s *Service) Token(ctx context.Context, phone, password string) (string, er
 //Products ...
 func (s *Service) Products(ctx context.Context) ([]*Product, error) {
 
-	return true
-}
 	items := make([]*Product, 0)
 
 	sqlStatement := `SELECT id, name, price, qty FROM products WHERE active = true ORDER by id LIMIT 500`
@@ -298,8 +298,8 @@ func (s *Service) IDByToken(ctx context.Context, token string) (int64, error) {
 	sqlStatement := `SELECT customer_id FROM customers_tokens WHERE token = $1`
 	err := s.pool.QueryRow(ctx, sqlStatement, token).Scan(&id)
 
-	
 	if err != nil {
+
 		if err == pgx.ErrNoRows {
 			return 0, nil
 		}

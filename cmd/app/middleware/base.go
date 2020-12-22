@@ -27,7 +27,7 @@ func Base(checkAuth func(string, string) bool) func(handler http.Handler) http.H
 	}
 }
 
-// getLoginPass возвращает логин и пароль
+// getLoginPass возвращает логин и пороль
 func getLoginPass(r *http.Request) (string, string, error) {
 	auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 	if len(auth) != 2 || auth[0] != "Basic" {

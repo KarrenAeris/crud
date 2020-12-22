@@ -87,7 +87,7 @@ func main() {
 	}
 	// rows нужно закрыть
 	defer rows.Close()
-	// rows.Next() возвращает true до тех пор, пока дальше есть строка
+	// rows.Next() возвращает true до тех пор, пока далбше есть строка
 	for rows.Next() {
 		item := &Managers{}
 		err = rows.Scan(&item.ID, &item.Name, &item.Salary)

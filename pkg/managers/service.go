@@ -82,7 +82,7 @@ func (s *Service) Token(ctx context.Context, phone, password string) (token stri
 	var hash string
 	var id int64
 	err = s.pool.QueryRow(ctx, `select id,password from managers where phone = $1`, phone).Scan(&id, &hash)
-
+	log.Println(err)
 	if err == pgx.ErrNoRows {
 		return "", types.ErrInvalidPassword
 	}
@@ -91,16 +91,19 @@ func (s *Service) Token(ctx context.Context, phone, password string) (token stri
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	log.Println(err)
 	if err != nil {
 		return "", types.ErrInvalidPassword
 	}
 
 	token, err = utils.GenerateTokenStr()
+	log.Println(err)
 	if err != nil {
 		return "", err
 	}
 
 	_, err = s.pool.Exec(ctx, `insert into managers_tokens(token,manager_id) values($1,$2)`, token, id)
+	log.Println(err)
 	if err != nil {
 		return "", types.ErrInternal
 	}
