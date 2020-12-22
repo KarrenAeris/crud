@@ -9,6 +9,7 @@ import (
 
 	"github.com/KarrenAeris/crud/cmd/app/middleware"
 	"github.com/KarrenAeris/crud/pkg/managers"
+	"github.com/KarrenAeris/crud/pkg/types"
 	"github.com/gorilla/mux"
 )
 
@@ -49,7 +50,7 @@ func (s *Server) handleManagerRegistration(w http.ResponseWriter, r *http.Reques
 		errorWriter(w, http.StatusInternalServerError, err)
 		return
 	}
-	item := &managers.Manager{
+	item := &types.Manager{
 		ID:    regItem.ID,
 		Name:  regItem.Name,
 		Phone: regItem.Phone,
@@ -76,7 +77,7 @@ func (s *Server) handleManagerRegistration(w http.ResponseWriter, r *http.Reques
 
 func (s *Server) handleManagerGetToken(w http.ResponseWriter, r *http.Request) {
 
-	var manager *managers.Manager
+	var manager *types.Manager
 	err := json.NewDecoder(r.Body).Decode(&manager)
 
 	if err != nil {
@@ -107,7 +108,7 @@ func (s *Server) handleManagerChangeProducts(w http.ResponseWriter, r *http.Requ
 		errorWriter(w, http.StatusForbidden, err)
 		return
 	}
-	product := &managers.Product{}
+	product := &types.Product{}
 	err = json.NewDecoder(r.Body).Decode(&product)
 	fmt.Print(product)
 	if err != nil {
@@ -138,7 +139,7 @@ func (s *Server) handleManagerMakeSales(w http.ResponseWriter, r *http.Request) 
 		errorWriter(w, http.StatusForbidden, err)
 		return
 	}
-	sale := &managers.Sale{}
+	sale := &types.Sale{}
 	sale.ManagerID = id
 	err = json.NewDecoder(r.Body).Decode(&sale)
 
@@ -299,7 +300,7 @@ func (s *Server) handleManagerChangeCustomer(w http.ResponseWriter, r *http.Requ
 		errorWriter(w, http.StatusForbidden, err)
 		return
 	}
-	customer := &managers.Customer{}
+	customer := &types.Customer{}
 	err = json.NewDecoder(r.Body).Decode(&customer)
 	fmt.Println(customer)
 	if err != nil {
